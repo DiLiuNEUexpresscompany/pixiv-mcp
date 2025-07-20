@@ -1,0 +1,4 @@
+/.venv/
+/src/__pycache__/
+/src/pixiv_mcp/__pycache__/
+/config/

@@ -1,0 +1,21 @@
+[project]
+name = "pixiv-mcp"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gppt>=4.1.1",
+    "mcp>=1.12.0",
+    "pixivpy3>=3.7.5",
+    "playwright>=1.53.0",
+    "pydantic>=2.11.7",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
