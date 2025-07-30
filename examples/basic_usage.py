@@ -36,6 +36,7 @@ async def example_search(keyword: str = "初音ミク"):
             print(f"   找到 {len(result)} 个作品:")
             for i, illust in enumerate(result, 1):
                 print(f"   {i}. {illust['title']} - {illust['user']['name']}")
+                print(f"      链接: https://www.pixiv.net/artworks/{illust['id']}")
                 print(f"      浏览: {illust.get('total_view', 0)}, 收藏: {illust.get('total_bookmarks', 0)}")
         else:
             print(f"   搜索失败: {result}")
@@ -60,6 +61,7 @@ async def example_ranking():
             print(f"   今日排行榜前5名:")
             for illust in result:
                 print(f"   {illust['rank']}. {illust['title']} - {illust['user']['name']}")
+                print(f"      链接: https://www.pixiv.net/artworks/{illust['id']}")
                 print(f"      浏览: {illust['total_view']}, 收藏: {illust['total_bookmarks']}")
         else:
             print(f"   获取排行榜失败: {result}")
@@ -81,6 +83,7 @@ async def example_illust_detail(illust_id: int = 59580629):
         
         if result and "error" not in result:
             print(f"   标题: {result['title']}")
+            print(f"   链接: https://www.pixiv.net/artworks/{result['id']}")
             print(f"   作者: {result['user']['name']} (@{result['user']['account']})")
             print(f"   尺寸: {result['width']}x{result['height']}")
             print(f"   页数: {result['page_count']}")
