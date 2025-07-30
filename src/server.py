@@ -13,8 +13,8 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Resource, Tool
 
-from .auth import ensure_refresh_token
-from .tools import TOOLS, dispatch
+from auth import ensure_refresh_token
+from tools import TOOLS, dispatch
 
 
 # 配置日志

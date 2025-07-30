@@ -21,17 +21,13 @@ import json
 from pathlib import Path
 
 # 导入认证模块
-from .auth import (
-    auto_setup_token,
-    get_token_with_gppt,
-    get_token_with_playwright,
+from auth import (
+    get_token,
     refresh_existing_token,
     token_status,
     clear_saved_credentials,
     get_refresh_token,
     setup_token_file,
-    is_gppt_available,
-    install_gppt,
     is_playwright_available,
     install_playwright
 )
@@ -45,111 +41,43 @@ def print_header():
     print()
 
 
-def cmd_auto(args):
-    """自动获取token"""
-    print("🤖 自动获取Pixiv token...")
-    
-    # 检查可用的工具
-    playwright_available = is_playwright_available()
-    gppt_available = is_gppt_available()
-    
-    if not playwright_available and not gppt_available:
-        print("❌ 未安装任何token获取工具")
-        print("推荐安装playwright (更稳定): pip install playwright && playwright install")
-        install_choice = input("是否自动安装playwright? (y/n): ").lower().strip()
-        if install_choice in ['y', 'yes']:
-            if not install_playwright():
-                return False
-        else:
-            print("请手动安装: pip install playwright && playwright install")
-            return False
-    
-    token = auto_setup_token()
-    if token:
-        print("✅ Token自动获取成功")
-        return True
-    else:
-        print("❌ Token自动获取失败")
-        return False
 
-
-def cmd_playwright(args):
-    """使用Playwright获取token"""
-    print("🎭 使用Playwright获取Pixiv token...")
-    
-    if not is_playwright_available():
-        print("❌ 需要安装playwright: pip install playwright && playwright install")
-        install_choice = input("是否自动安装? (y/n): ").lower().strip()
-        if install_choice in ['y', 'yes']:
-            if not install_playwright():
-                return False
-        else:
-            return False
-    
-    username = args.username or input("请输入Pixiv用户名/邮箱: ").strip()
-    password = args.password or getpass.getpass("请输入Pixiv密码: ").strip()
-    
-    if not username or not password:
-        print("❌ 用户名或密码不能为空")
-        return False
-    
-    headless = not args.interactive if hasattr(args, 'interactive') else True
-    token = get_token_with_playwright(username, password, headless)
-    
-    if token:
-        setup_token_file(token)
-        print("✅ Playwright获取token成功")
-        return True
-    else:
-        print("❌ Playwright获取token失败")
-        return False
 
 
 def cmd_login(args):
     """交互式登录"""
     print("🖱️  交互式登录Pixiv...")
+    print("📋 由于需要处理二步验证和图片验证码，浏览器将保持打开状态")
+    print("⏰ 超时时间：5分钟，请完成所有验证步骤")
+    print()
     
-    if not is_gppt_available():
-        print("❌ 需要安装gppt工具: pip install gppt")
-        return False
+    username = args.username if hasattr(args, 'username') and args.username else None
+    password = args.password if hasattr(args, 'password') and args.password else None
     
-    try:
-        from gppt import GetPixivToken
-        
-        print("浏览器将打开，请在页面中登录Pixiv...")
-        g = GetPixivToken(headless=False)
-        result = g.login()
-        
-        if result and "refresh_token" in result:
-            token = result["refresh_token"]
-            setup_token_file(token)
-            print("✅ 交互式登录成功")
-            return True
-        else:
-            print("❌ 交互式登录失败")
-            return False
-            
-    except Exception as e:
-        print(f"❌ 登录过程中出现错误: {e}")
+    if not username or not password:
+        print("💡 提示：如果未提供用户名密码，请在浏览器中手动输入")
+    
+    # 使用交互式模式（显示浏览器）
+    token = get_token(username, password, headless=False)
+    if token:
+        setup_token_file(token)
+        print("✅ 交互式登录成功")
+        return True
+    else:
+        print("❌ 交互式登录失败")
+        print("💡 提示：请确保完成了所有验证步骤，包括图片验证码和二步验证")
         return False
 
 
-def cmd_headless_login(args):
+def cmd_headless(args):
     """无头浏览器登录"""
     print("🤖 无头浏览器登录...")
     
-    if not is_gppt_available():
-        print("❌ 需要安装gppt工具: pip install gppt")
-        return False
+    username = args.username if hasattr(args, 'username') and args.username else None
+    password = args.password if hasattr(args, 'password') and args.password else None
     
-    username = args.username or input("请输入Pixiv用户名/邮箱: ").strip()
-    password = args.password or getpass.getpass("请输入Pixiv密码: ").strip()
-    
-    if not username or not password:
-        print("❌ 用户名或密码不能为空")
-        return False
-    
-    token = get_token_with_gppt(username, password, headless=True)
+    # 使用无头模式
+    token = get_token(username, password, headless=True)
     if token:
         setup_token_file(token)
         print("✅ 无头浏览器登录成功")
@@ -188,20 +116,26 @@ def cmd_status(args):
     status = token_status()
     
     print("🔍 检查结果:")
-    print(f"  环境变量token: {'✅' if status['env_token_exists'] else '❌'}")
-    print(f"  文件token: {'✅' if status['file_token_exists'] else '❌'}")
-    print(f"  保存的凭据: {'✅' if status['credentials_saved'] else '❌'}")
+    print(f"  系统环境变量token: {'✅' if status['env_token_exists'] else '❌'}")
+    print(f"  .env文件token: {'✅' if status['env_file_token_exists'] else '❌'}")
+    print(f"  旧版文件token: {'✅' if status['old_file_token_exists'] else '❌'}")
     print(f"  playwright工具: {'✅' if status['playwright_available'] else '❌'}")
-    print(f"  gppt工具: {'✅' if status['gppt_available'] else '❌'}")
     
-    if status.get('file_token_valid') is not None:
-        print(f"  token格式: {'✅' if status['file_token_valid'] else '❌'}")
-        print(f"  token长度: {status.get('file_token_length', 0)}")
+    if status.get('env_file_token_valid') is not None:
+        print(f"  .env token格式: {'✅' if status['env_file_token_valid'] else '❌'}")
+        print(f"  .env token长度: {status.get('env_file_token_length', 0)}")
+    
+    if status.get('old_file_token_exists') and status.get('old_file_token_valid'):
+        print("  💡 检测到旧版token文件，下次使用时将自动迁移到.env文件")
     
     print()
+    # 使用与auth.py相同的PROJECT_ROOT计算方式
+    project_root = Path(__file__).parent.parent
+    print(f"📁 .env文件位置: {project_root / '.env'}")
     
     # 尝试验证token
-    if status['env_token_exists'] or status['file_token_exists']:
+    has_token = status['env_token_exists'] or status['env_file_token_exists'] or status['old_file_token_exists']
+    if has_token:
         verify_choice = input("是否验证token有效性? (y/n): ").lower().strip()
         if verify_choice in ['y', 'yes']:
             return cmd_test(args)
@@ -317,34 +251,27 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用示例:
-  python -m pixiv_mcp.token_manager auto           # 自动获取token
-  python -m pixiv_mcp.token_manager playwright -u user -p pass  # 使用Playwright获取
-  python -m pixiv_mcp.token_manager playwright -i  # Playwright交互模式
-  python -m pixiv_mcp.token_manager login          # 交互式登录
+  python -m pixiv_mcp.token_manager login          # 交互式登录 (推荐)
+  python -m pixiv_mcp.token_manager login -u user -p pass  # 指定账号交互式登录
   python -m pixiv_mcp.token_manager headless -u user -p pass  # 无头浏览器登录
   python -m pixiv_mcp.token_manager refresh        # 刷新token
   python -m pixiv_mcp.token_manager status         # 查看状态
   python -m pixiv_mcp.token_manager test           # 测试token
   python -m pixiv_mcp.token_manager clear          # 清除数据
   python -m pixiv_mcp.token_manager claude         # 生成Claude配置
+
+注意: 由于Pixiv需要二步验证和图片验证码，必须使用交互式登录手动完成验证。
         """
     )
     
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
     
-    # auto命令
-    subparsers.add_parser('auto', help='自动获取token')
+    # login命令 (交互式) - 主要使用方式
+    login_parser = subparsers.add_parser('login', help='交互式登录 (推荐)')
+    login_parser.add_argument('-u', '--username', help='Pixiv用户名/邮箱')
+    login_parser.add_argument('-p', '--password', help='Pixiv密码')
     
-    # playwright命令
-    playwright_parser = subparsers.add_parser('playwright', help='使用Playwright获取token')
-    playwright_parser.add_argument('-u', '--username', help='Pixiv用户名/邮箱')
-    playwright_parser.add_argument('-p', '--password', help='Pixiv密码')
-    playwright_parser.add_argument('-i', '--interactive', action='store_true', help='显示浏览器界面')
-    
-    # login命令
-    subparsers.add_parser('login', help='交互式登录')
-    
-    # headless命令
+    # headless命令 (无头浏览器)
     headless_parser = subparsers.add_parser('headless', help='无头浏览器登录')
     headless_parser.add_argument('-u', '--username', help='Pixiv用户名/邮箱')
     headless_parser.add_argument('-p', '--password', help='Pixiv密码')
@@ -362,10 +289,8 @@ def main():
     
     # 根据命令执行相应功能
     commands = {
-        'auto': cmd_auto,
-        'playwright': cmd_playwright,
         'login': cmd_login,
-        'headless': cmd_headless_login,
+        'headless': cmd_headless,
         'refresh': cmd_refresh,
         'status': cmd_status,
         'test': cmd_test,
@@ -389,30 +314,22 @@ def main():
         
         # 交互式模式
         print("\n🎯 交互式模式:")
-        print("1. 自动获取token")
-        print("2. Playwright获取token")
-        print("3. 交互式登录")
-        print("4. 查看token状态")
-        print("5. 测试token")
-        print("6. 退出")
+        print("1. 交互式登录 (推荐)")
+        print("2. 查看token状态")
+        print("3. 测试token")
+        print("4. 退出")
         
         while True:
-            choice = input("\n请选择操作 (1-6): ").strip()
+            choice = input("\n请选择操作 (1-4): ").strip()
             
             if choice == '1':
-                cmd_auto(args)
-                break
-            elif choice == '2':
-                cmd_playwright(args)
-                break
-            elif choice == '3':
                 cmd_login(args)
                 break
-            elif choice == '4':
+            elif choice == '2':
                 cmd_status(args)
-            elif choice == '5':
+            elif choice == '3':
                 cmd_test(args)
-            elif choice == '6':
+            elif choice == '4':
                 print("👋 再见!")
                 break
             else:

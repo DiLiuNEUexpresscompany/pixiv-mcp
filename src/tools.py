@@ -14,7 +14,7 @@ from pixivpy3 import AppPixivAPI
 from pydantic import BaseModel, Field
 from mcp.types import Tool
 
-from .auth import get_refresh_token
+from auth import get_refresh_token
 
 
 # 全局API实例
@@ -115,6 +115,7 @@ async def search_illust(params: SearchIllustParams) -> List[Dict[str, Any]]:
             illusts.append({
                 "id": illust.id,
                 "title": illust.title,
+                "link": f"https://www.pixiv.net/artworks/{illust.id}",  # 添加链接字段
                 "user": {
                     "id": illust.user.id,
                     "name": illust.user.name,
