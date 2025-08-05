@@ -122,7 +122,7 @@ class PixivTokenFetcher:
             self.perform_auto_login(page, self.username, self.password)
 
             try:
-                page.wait_for_event("close", timeout=100000)  # 10秒超时，更合理
+                page.wait_for_event("close", timeout=100000)  # 100秒超时，更合理
             except TimeoutError:
                 print("⌛ Timeout: Code not captured.")
 

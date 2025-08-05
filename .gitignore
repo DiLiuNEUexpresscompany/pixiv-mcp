@@ -3,3 +3,5 @@
 /src/pixiv_mcp/__pycache__/
 /config/
 .env
+HTTP_SERVER_README.md
+NOVEL_TEXT_IMPROVEMENTS.md
