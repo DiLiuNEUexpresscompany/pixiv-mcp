@@ -92,7 +92,7 @@ python start_http_server.py \
 - `pixiv_illust_detail` - 插画详情
 - `pixiv_user_detail` - 用户详情
 - `pixiv_novel_detail` - 小说详情
-- `novel_text` - 小说正文 （如果无法查看小说正文使用fork安装pixivpy[!expresscompany-pixivpy](https://github.com/DiLiuNEUexpresscompany/pixivpy)）
+- `novel_text` - 小说正文 （如果无法查看小说正文使用fork安装修改过的 [pixivpy](https://github.com/DiLiuNEUexpresscompany/pixivpy)
 
 ### 下载功能
 - `pixiv_download_illust` - 下载插画
